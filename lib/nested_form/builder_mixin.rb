@@ -21,9 +21,9 @@ module NestedForm
       @fields ||= {}
       @template.after_nested_form(association) do
         model_object = object.class.reflect_on_association(association).klass.new
-        output = %Q[<div id="#{association}_fields_blueprint" style="display: none">].html_safe
-        output << fields_for(association, model_object, :child_index => "new_#{association}", &@fields[association])
-        output.safe_concat('</div>')
+        output = %Q[<script type="text/html" id="#{association}_fields_blueprint">].html_safe
+        output << fields_for(association, model_object, :child_index => "new_#{association}", wrapper: options[:wrapper], &@fields[association])
+        output.safe_concat('</script>')
         output
       end
       @template.link_to(*args, &block)
@@ -57,9 +57,20 @@ module NestedForm
     end
 
     def fields_for_nested_model(name, object, options, block)
-      output = '<div class="fields">'.html_safe
-      output << super
-      output.safe_concat('</div>')
+      if options.keys.include?(:wrapper)
+        wrapper = options[:wrapper]
+      else
+        wrapper = {}
+      end
+
+      if wrapper.class == Hash
+        wrapper[:tag] ||= 'div'
+        wrapper[:class] ||= 'fields'
+      end
+      output = ''.html_safe
+      output << %(<#{wrapper[:tag]} class="#{wrapper[:class]}">).html_safe if wrapper
+      output << super.html_safe
+      output.safe_concat("</#{wrapper[:tag]}>") if wrapper
       output
     end
   end
